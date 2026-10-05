@@ -1,0 +1,191 @@
+<!--
+  source for tags: https://www.w3schools.com/TAGS/default.ASP
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basketball Shot Tracker | Project Proposal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <h1>Basketball Shot Tracker</h1>
+    <p><strong>Arthur De Souza and Shravya Sivanathan</strong></p>
+    <p>Fall 2026 ECE 4554 Computer Vision: Project Proposal</p>
+    <p>Virginia Tech</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Problem Statement</h2>
+      <p>When a shooter shoots the basketball, a make or miss does not define if the shooter had good form or poor form.
+        This project aims to develop a basketball shot tracker that analyzes a shooter's technique independent of
+        whether it goes in the hoop or not. This will be done by analyzing data gathered from public sources as well as
+        videos recorded by the team.</p>
+      <p>The proposed system will estimate the shooter's body pose, assess shooting form, and automatically determine
+        whether the shot was made or missed. It will analyze these factors and assign each shot to one of the following
+        four categories:</p>
+      <table>
+        <caption>Proposed shot categories</caption>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Form assessment</th>
+            <th scope="col">Shot outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Good make</td>
+            <td>Good form</td>
+            <td>Made shot</td>
+          </tr>
+          <tr>
+            <td>Bad make</td>
+            <td>Poor form</td>
+            <td>Made shot</td>
+          </tr>
+          <tr>
+            <td>Good miss</td>
+            <td>Good form</td>
+            <td>Missed shot</td>
+          </tr>
+          <tr>
+            <td>Bad miss</td>
+            <td>Poor form</td>
+            <td>Missed shot</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>"Good form" and "poor form" refer to criteria defined by the team prior to labeling the dataset. The criteria
+        will be based on reference footage, possibly including shots by Klay Thompson. The assessment should take into
+        account that different shooters have different styles, instead of treating one player's shot as the only correct
+        way to shoot. If possible, the system will also give feedback on specific parts of the shooter's form.</p>
+    </section>
+
+    <figure>
+      <div class="pipeline">
+        <div class="step">Jump-shot video</div>
+        <div class="step">
+          Body pose -> Form assessment<br>
+          Ball and hoop tracking -> Make/miss
+        </div>
+        <div class="step">Combined shot category</div>
+      </div>
+      <figcaption>Figure 1. Proposed processing pipeline. Shooting form and shot outcome are assessed separately and
+        then combined.</figcaption>
+    </figure>
+
+    <section>
+      <h2>Planned Approach</h2>
+      <p>The form analysis pipeline will utilize a similar technique developed by Arthur when he worked on a hand sign
+        recognition project, which includes extracting landmark coordinates, normalizing the data, and classifying using
+        a random forest classifier. In this case, the body pose estimator will detect landmarks like shoulders, elbows,
+        wrists, hips, and knees from each video frame. As of right now, MediaPipe Pose Landmarker will be used <a
+          href="#ref-1">[1]</a>.</p>
+      <p>Normalization will involve scaling landmark coordinates according to the size of the shooter's hips and torso
+        length in order to remove the impact of body size and placement in the picture. Features, like elbow joint
+        angles, degree of bending in the knee joint, and shooting wrist height above the shoulders, will be gathered
+        based on landmark coordinates.</p>
+      <p>Since jump shooting is a motion and not just a stationary pose, some features will be extracted from certain
+        parts in the jump shot's motion. The setup phase will be determined as the frame with the maximum knee bend
+        before the jump, while the release phase will be the frame with maximum shooting wrist height.</p>
+      <p>The random forest classifier will be trained on how to recognize good and bad form based on these features with
+        help of the scikit-learn library <a href="#ref-2">[2]</a>. For the baseline approach, a rule-based evaluation
+        based on comparing those features with explicit thresholds (i.e. elbow angle at release time) will be
+        considered.</p>
+      <p>Since body form is not enough to determine if the basket was scored, the outcome of the shot will be determined
+        using a pretrained object detector: Ultralytics YOLO <a href="#ref-3">[3]</a>. YOLO will detect the ball in the
+        frame, which, if necessary, can be trained on a small amount of labeled frames. In the case of a stationary
+        camera, the position of the basket in the frame can be determined once per clip. This can be done by a detector
+        or by manually marking the rim area. If the center of the ball enters the rim from the top and goes out the
+        bottom, the shot will be determined as "made". The OpenCV library <a href="#ref-4">[4]</a> will be used for
+        video processing and tracking.</p>
+      <p>There are some issues, however, as the viewpoint of the camera can affect pose measurements, and the ball and
+        hoop must be visible for outcome detection. Therefore, the initial scope is limited to a stationary camera, one
+        shooter, and side or angled views where the shooter, ball, and hoop are all in frame.</p>
+    </section>
+
+    <section>
+      <h2>Plans for Experiments</h2>
+      <h3>Datasets</h3>
+      <p>The dataset will consist of a combination of two datasets: publicly available clips from the internet (i.e.
+        shooting tutorials and practice shots) and clips recorded by the team that clearly show the shooter, ball, and
+        hoop. Using both datasets, the team aims to obtain around 200 jump shot attempts, with approximately an equal
+        amount of makes and misses.</p>
+
+      <h3>Data Collection Procedure</h3>
+      <p>The team will record shots at a basketball court using a phone. The camera will be placed so that it shows the
+        shooter, ball, and hoop fully in the frame. The shot outcome will be recorded and utilized as ground truth.
+        Afterward, both team members will categorize each shot's form based on the criteria.</p>
+
+      <h3>Code: Written vs. Borrowed</h3>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Borrowed (existing libraries and models)</th>
+            <th scope="col">Implemented by the team</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MediaPipe Pose Landmarker for pose estimation; scikit-learn random forest; pretrained YOLO object
+              detector; OpenCV for video I/O</td>
+            <td>Landmark normalization and feature extraction; shot-stage detection; rule-based baseline;
+              ball-trajectory and make/miss logic; combination into four categories; labeling and evaluation scripts
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Experiments</h3>
+      <ol>
+        <li>Compare the performance of the random forest against the rule based baseline on unseen shots, measuring
+          accuracy and F1 score. The test set will include shots made by shooters not included in the training set.</li>
+        <li>Use the random forest's feature importance scores to determine which measurements (i.e. elbow angle at ball
+          release) have the most weight when it comes to deciding good form. Also train separate models using both setup
+          and release features, as well as models for each stage alone, to determine which stage of the shot provides
+          the most data.</li>
+        <li>Compare make/miss results produced by the system against the actual recorded outcomes to measure accuracy.
+          The incorrect predictions will be reviewed to determine the cause (i.e. player blocking rim).</li>
+        <li>Measure accuracy of the final output, where each shot is placed into one of the four categories.</li>
+        <li>Compare the system's performance using different camera angles, along with the dataset footage, to determine
+          how much video angle and quality affect results.</li>
+      </ol>
+
+      <h3>Definition of Success</h3>
+      <p>The project will be a success if the system has around 80% categorization accuracy on clips of shooters it was
+        not previously trained on. Not only that, make/miss detection should have around 90% accuracy on valid clips.
+        The final product should be a working system that takes in a video, places each shot into one of the categories,
+        and possibly provides feedback on the shot.</p>
+      <h3>Expected Findings and Uncertainties</h3>
+      <p>The team expects that elbow and wrist measurements at the release of the ball will have the most weight when
+        determining the form category. Make/miss detection is also expected to work well from a side view, where the
+        path of the ball is easy to see. However, there are a few uncertainties. Pose estimation may be less accurate at
+        the release, when the shooter's arms can block their head. In addition, around 200 shots may not be enough for
+        the system to work well on new shooters. Lastly, the public clips may not have a standard camera angle or video
+        quality, especially in comparison to the team's clips, which can lower the accuracy.</p>
+    </section>
+
+    <section>
+      <h2>References</h2>
+      <ol>
+        <li id="ref-1">Google AI Edge: <a
+            href="https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker">Pose landmark detection
+            guide.</a></li>
+        <li id="ref-2">Scikit-learn: <a
+            href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html">RandomForestClassifier
+            documentation.</a></li>
+        <li id="ref-3">Ultralytics YOLO: <a href="https://docs.ultralytics.com/">Ultralytics YOLO documentation.</a></li>
+        <li id="ref-4">OpenCV: <a href="https://opencv.org/">Open Source Computer Vision Library.</a></li>
+      </ol>
+    </section>
+    <footer>Arthur De Souza and Shravya Sivanathan · Basketball Shot Tracker</footer>
+  </main>
+</body>
+
+</html>

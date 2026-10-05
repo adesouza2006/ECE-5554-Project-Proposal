@@ -1,0 +1,59 @@
+body {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: Arial;
+    color: black;
+    line-height: 1.65;
+}
+
+header {
+    border-bottom: 1px solid lightgray;
+    padding-bottom: 20px;
+}
+
+h2 {
+    margin-top: 32px;
+}
+
+.pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 16px;
+    background: white;
+    border: 1px solid lightgray;
+}
+
+.step {
+    padding: 12px;
+    border: 1px solid lightgray;
+    background: white;
+    text-align: center;
+}
+
+figcaption {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: black;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th,td {
+    border: 1px solid lightgray;
+    padding: 10px;
+    text-align: left;
+}
+
+footer {
+    margin-top: 36px;
+    border-top: 1px solid #ddd;
+    padding-top: 12px;
+    font-size: 0.9rem;
+    color: gray;
+}
